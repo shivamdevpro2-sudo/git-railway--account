@@ -1,27 +1,20 @@
 {
   "manifest_version": 3,
-  "name": "Hiring Content Extractor",
-  "version": "1.0.0",
-  "description": "Extract emails, phone numbers and hiring context from any webpage.",
+  "name": "LinkedIn Hiring Extractor",
+  "version": "1.0",
+  "description": "Extract LinkedIn hiring posts into a CRM Dashboard",
   "permissions": [
     "activeTab",
     "scripting",
-    "clipboardWrite"
+    "storage",
+    "downloads"
   ],
   "host_permissions": [
-    "<all_urls>"
+    "https://www.linkedin.com/*",
+    "http://*/*",
+    "https://*/*"
   ],
   "action": {
-    "default_popup": "popup.html"
-  },
-  "content_scripts": [
-    {
-      "matches": [
-        "<all_urls>"
-      ],
-      "js": [
-        "content.js"
-      ]
-    }
-  ]
+    "default_popup": "popup/popup.html"
+  }
 }

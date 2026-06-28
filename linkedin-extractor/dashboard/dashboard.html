@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkedIn Hiring CRM</title>
+    <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+    <header class="topbar">
+        <h1>Hiring Extractor CRM</h1>
+        <div class="actions">
+            <button id="btnSettings">Settings</button>
+            <button id="btnExportAll">Export All CSV</button>
+        </div>
+    </header>
+
+    <div class="metrics-container" id="metricsCards">
+        <!-- populated dynamically -->
+    </div>
+
+    <div class="toolbar">
+        <input type="text" id="searchInput" placeholder="Search companies, roles, tags, etc...">
+        <div class="bulk-actions">
+            <button id="btnExportSelected">Export Selected</button>
+            <button id="btnCopyEmails">Copy Emails</button>
+            <button id="btnSendN8n">Send to n8n</button>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th><input type="checkbox" id="selectAll"></th>
+                    <th>Company</th>
+                    <th>Role</th>
+                    <th>Emails</th>
+                    <th>Phones</th>
+                    <th>Tags</th>
+                    <th>Status</th>
+                    <th>Notes</th>
+                    <th>View</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <!-- rows -->
+            </tbody>
+        </table>
+    </div>
+
+    <div class="pagination">
+        <button id="btnPrev">Previous</button>
+        <span id="pageInfo">Page 1 of 1</span>
+        <button id="btnNext">Next</button>
+    </div>
+
+    <div id="viewModal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-modal" id="closeModal">&times;</span>
+            <h2 id="modalCompany">Company</h2>
+            <p id="modalRole">Role</p>
+            <hr>
+            <pre id="modalPost"></pre>
+        </div>
+    </div>
+
+    <script src="../libs/xlsx.full.min.js"></script>
+    <script type="module" src="dashboard.js"></script>
+</body>
+</html>
