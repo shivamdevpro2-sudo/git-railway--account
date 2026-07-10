@@ -1,6 +1,14 @@
 {
   "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node mailer/server.js"
+  },
   "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.4.2",
+    "express": "^4.18.2",
     "nodemailer": "^6.9.0"
   }
 }
+
