@@ -53,7 +53,15 @@ function writeResults(data) {
 }
 
 const app = express();
-app.use(cors());
+
+// Fix: Allow Chrome Extension and all origins (needed for chrome-extension:// requests)
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+app.options('*', cors()); // Handle preflight requests
+
 app.use(express.json());
 
 if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
