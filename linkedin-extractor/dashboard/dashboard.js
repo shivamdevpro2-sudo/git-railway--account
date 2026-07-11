@@ -188,9 +188,6 @@ Over the past 2 years, I have worked as a paid intern across multiple product-ba
 ✅ Server Management — Managed Linux servers, CI/CD pipelines, and uptime monitoring
 ✅ Management System Development — Built scalable admin & operations tools end-to-end
 
-━━━━━━━━━━━━━━━━━━━━━━━━
-  COMPANIES I'VE WORKED WITH (2 Years Paid)
-━━━━━━━━━━━━━━━━━━━━━━━━
 
 🏢 Medzillo        → https://medzillo.in
    Backend dev, server management & deployment optimization
@@ -223,6 +220,56 @@ Shivam Gupta
 🔗 linkedin.com/in/shivam-gupta-bb1767304`;
 
         showToast('✅ Auto-filled! Review and send.');
+    });
+
+    // 💻 Auto-Fill Full Stack Developer Application
+    document.getElementById('btnAutoFillFullStack').addEventListener('click', () => {
+        document.getElementById('emailSubject').value = '💻 Full Stack Developer Application — 2 Years Paid Experience | React, Node.js & Backend Systems';
+
+        document.getElementById('emailBody').value = `Hello Hiring Team,
+
+I hope this message finds you well.
+
+My name is Shivam Gupta, and I'm reaching out to express my strong interest in a Full Stack Developer opportunity with your organization.
+
+Over the past 2 years, I have worked as a paid intern across multiple product-based companies, building and shipping real-world full stack applications from scratch:
+
+✅ Frontend Development — Built responsive UIs using React.js & modern JavaScript
+✅ Backend Engineering — Developed REST APIs, optimized databases, handled server-side logic
+✅ Deployment & DevOps — Managed CI/CD pipelines, cloud deployments, and server infrastructure
+✅ Cost Optimization — Reduced cloud/deployment costs significantly across projects
+✅ End-to-End Ownership — Delivered complete features independently, from design to production
+
+
+🏢 Medzillo        → https://medzillo.in
+   Full stack development, backend APIs & server management
+
+🏢 SMC             → System architecture & backend optimization
+🏢 Curozip         → Full-stack product engineering
+🏢 NF3             → Infrastructure, deployment & cost reduction
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+  MY WORK
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+🌐 Portfolio  →  https://port-folio-9ob2.onrender.com
+💻 GitHub     →  https://github.com/shivam543210
+🔗 LinkedIn   →  https://www.linkedin.com/in/shivam-gupta-bb1767304/
+📄 Resume     →  https://drive.google.com/file/d/1fQIY4hAmjvNPYYL0aMkMVBF2FngFNVH2/view?usp=sharing
+
+
+
+I bring practical, shipped experience — not just theory. I have worked on real products used by real users, and I'm highly motivated to contribute to your team from day one.
+
+Looking forward to hearing from you!
+
+Warm regards,
+Shivam Gupta
+9305302337
+📧 shivam.dev.pro.2@gmail.com
+🔗 linkedin.com/in/shivam-gupta-bb1767304`;
+
+        showToast('✅ Full Stack template filled! Review and send.');
     });
 
 
