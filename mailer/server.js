@@ -12,6 +12,24 @@ import { join } from 'path';
 const RECIPIENTS_FILE = join(dirname(fileURLToPath(import.meta.url)), 'recipients.json');
 const RESULTS_FILE = join(dirname(fileURLToPath(import.meta.url)), 'results.json');
 
+// ─── In-Memory Log Store ───────────────────────────────────────────────────
+const LOG_STORE = [];
+const MAX_LOGS = 200;
+
+function log(level, msg, data = null) {
+  const entry = {
+    ts: new Date().toISOString(),
+    level,
+    msg,
+    ...(data ? { data } : {}),
+  };
+  LOG_STORE.push(entry);
+  if (LOG_STORE.length > MAX_LOGS) LOG_STORE.shift();
+  const prefix = { INFO: '🔵', OK: '✅', WARN: '⚠️', ERROR: '❌' }[level] || '•';
+  console.log(`${prefix} [${entry.ts}] ${msg}`, data ? JSON.stringify(data) : '');
+}
+
+// ─── Label Rules ──────────────────────────────────────────────────────────
 const LABEL_RULES = [
   { pattern: /unpaid/i, label: '[Unpaid Intern]' },
   { pattern: /paid/i, label: '[Paid Intern]' },
@@ -52,44 +70,123 @@ function writeResults(data) {
   writeFileSync(RESULTS_FILE, JSON.stringify(data, null, 2));
 }
 
+// ─── Express Setup ────────────────────────────────────────────────────────
 const app = express();
 
-// Fix: Allow Chrome Extension and all origins (needed for chrome-extension:// requests)
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
-app.options('*', cors()); // Handle preflight requests
-
+app.options('*', cors());
 app.use(express.json());
 
+// ─── Env Check ────────────────────────────────────────────────────────────
 if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-  console.error('ERROR: Set EMAIL_USER and EMAIL_PASS environment variables.');
-  console.error('Create a .env file in the project root with:');
-  console.error('  EMAIL_USER=your-email@gmail.com');
-  console.error('  EMAIL_PASS=your-app-password');
+  log('ERROR', 'Missing EMAIL_USER or EMAIL_PASS env vars — server will crash');
   process.exit(1);
 }
 
+log('INFO', 'Starting email server', {
+  EMAIL_USER: process.env.EMAIL_USER,
+  EMAIL_PASS: process.env.EMAIL_PASS ? `${process.env.EMAIL_PASS.substring(0, 4)}****` : 'NOT SET',
+});
+
+// ─── Nodemailer Transporter ───────────────────────────────────────────────
 const transporter = nodemailer.createTransport({
   service: 'gmail',
-  pool: true,
-  maxConnections: 1,
-  rateDelta: 2000,
-  rateLimit: 5,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
 });
 
-// Verify credentials on startup
-transporter.verify((err) => {
-  if (err) console.error('❌ Gmail auth failed:', err.message);
-  else console.log('✅ Gmail transporter ready');
+// Verify on startup
+transporter.verify((err, success) => {
+  if (err) {
+    log('ERROR', 'Gmail SMTP verification FAILED', { error: err.message, code: err.code });
+  } else {
+    log('OK', 'Gmail SMTP verified — transporter is ready', { success });
+  }
 });
 
+// ─── Routes ───────────────────────────────────────────────────────────────
+
+// Health check
+app.get(['/', '/health'], (req, res) => {
+  log('INFO', 'Health check requested');
+  res.json({
+    status: 'running',
+    port: process.env.PORT || 3457,
+    emailUser: process.env.EMAIL_USER,
+    logCount: LOG_STORE.length,
+    recipientsFile: RECIPIENTS_FILE,
+    resultsFile: RESULTS_FILE,
+  });
+});
+
+// ─── NEW: View logs endpoint ───────────────────────────────────────────────
+app.get('/logs', (req, res) => {
+  const last = parseInt(req.query.last) || 50;
+  res.json({
+    total: LOG_STORE.length,
+    logs: LOG_STORE.slice(-last),
+  });
+});
+
+// ─── NEW: Synchronous test-email endpoint (shows real error) ──────────────
+app.post('/test-email', async (req, res) => {
+  const { to } = req.body;
+  if (!to) return res.status(400).json({ error: 'Provide { to: "email@example.com" }' });
+
+  log('INFO', `[TEST] Verifying SMTP before sending to ${to}`);
+
+  // Step 1: verify
+  try {
+    await new Promise((resolve, reject) =>
+      transporter.verify((err, ok) => err ? reject(err) : resolve(ok))
+    );
+    log('OK', '[TEST] SMTP verify passed');
+  } catch (err) {
+    log('ERROR', '[TEST] SMTP verify FAILED', { error: err.message, code: err.code });
+    return res.status(500).json({
+      step: 'smtp_verify',
+      success: false,
+      error: err.message,
+      code: err.code,
+      hint: 'Check EMAIL_USER and EMAIL_PASS in Railway Variables tab',
+    });
+  }
+
+  // Step 2: send
+  log('INFO', `[TEST] Attempting to send test email to ${to}`);
+  try {
+    const info = await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to,
+      subject: '✅ Test Email from Railway Server',
+      text: `Hello!\n\nYeh test email Railway server se successfully bheja gaya.\n\n- Shivam Gupta\n9305302337`,
+    });
+    log('OK', `[TEST] Email sent successfully to ${to}`, { messageId: info.messageId, response: info.response });
+    return res.json({
+      success: true,
+      to,
+      messageId: info.messageId,
+      response: info.response,
+    });
+  } catch (err) {
+    log('ERROR', `[TEST] Email send FAILED to ${to}`, { error: err.message, code: err.code });
+    return res.status(500).json({
+      step: 'send_mail',
+      success: false,
+      error: err.message,
+      code: err.code,
+      hint: 'Gmail may have blocked the send. Check App Password or enable Less Secure Apps.',
+    });
+  }
+});
+
+// ─── Recipients ───────────────────────────────────────────────────────────
 app.get('/recipients', (req, res) => {
   let list = readRecipients();
   const { category } = req.query;
@@ -107,7 +204,6 @@ app.post('/recipients', (req, res) => {
   }
 
   let list = readRecipients();
-
   let added = 0, merged = 0;
   for (const item of recipients) {
     if (!item.email) continue;
@@ -121,25 +217,19 @@ app.post('/recipients', (req, res) => {
       }
       merged++;
     } else {
-      list.push({
-        email: item.email,
-        name: item.name || '',
-        categories: item.categories || [],
-        addedAt: new Date().toISOString(),
-      });
+      list.push({ email: item.email, name: item.name || '', categories: item.categories || [], addedAt: new Date().toISOString() });
       added++;
     }
   }
 
   writeRecipients(list);
-  console.log(`[+] Recipients: ${added} new, ${merged} merged. Total: ${list.length}`);
+  log('INFO', `Recipients updated: +${added} new, ${merged} merged. Total: ${list.length}`);
   res.json({ added, merged, total: list.length });
 });
 
 app.delete('/recipients', (req, res) => {
   const { email, category } = req.query;
   let list = readRecipients();
-
   if (email) {
     list = list.filter(r => r.email !== email);
   } else if (category) {
@@ -148,7 +238,6 @@ app.delete('/recipients', (req, res) => {
   } else {
     return res.status(400).json({ error: 'Provide ?email= or ?category=' });
   }
-
   writeRecipients(list);
   res.json({ total: list.length });
 });
@@ -164,6 +253,7 @@ app.get('/stats', (req, res) => {
   res.json({ total: list.length, byCategory: categoryCount });
 });
 
+// ─── Send Emails ──────────────────────────────────────────────────────────
 app.post(['/send-emails', '/api/send-emails'], async (req, res) => {
   const { emails, categories, subject, body } = req.body;
 
@@ -180,16 +270,14 @@ app.post(['/send-emails', '/api/send-emails'], async (req, res) => {
     const matched = [];
     for (const r of list) {
       for (const cr of reList) {
-        if (r.categories.some(c => cr.re.test(c))) {
-          matched.push(r.email);
-          break;
-        }
+        if (r.categories.some(c => cr.re.test(c))) { matched.push(r.email); break; }
       }
     }
     targetEmails = [...new Set(matched)];
   }
 
   if (!targetEmails?.length) {
+    log('WARN', 'send-emails called with 0 recipients');
     return res.status(400).json({ error: 'No recipients found. Provide emails array or categories to filter.' });
   }
 
@@ -197,10 +285,9 @@ app.post(['/send-emails', '/api/send-emails'], async (req, res) => {
   const finalSubject = labelPrefix + subject;
   const total = targetEmails.length;
 
-  console.log(`\n[${new Date().toISOString()}] Queuing ${total} emails`);
-  console.log(`  Subject: ${finalSubject}`);
+  log('INFO', `Queuing ${total} emails`, { subject: finalSubject, recipients: targetEmails });
 
-  // ✅ Immediately respond so extension doesn't timeout
+  // Respond immediately — don't timeout extension
   res.status(202).json({
     status: 'queued',
     sent: total,
@@ -209,28 +296,29 @@ app.post(['/send-emails', '/api/send-emails'], async (req, res) => {
     results: targetEmails.map(e => ({ email: e, status: 'queued' })),
   });
 
-  // Send emails in background after response
+  // Background send
   (async () => {
     const results = [];
     for (const email of targetEmails) {
       try {
-        console.log(`  Sending to: ${email}...`);
-        await transporter.sendMail({
+        log('INFO', `Sending to: ${email}`);
+        const info = await transporter.sendMail({
           from: process.env.EMAIL_USER,
           to: email,
           subject: finalSubject,
           text: body,
         });
-        console.log(`  ✓ Sent to ${email}`);
-        results.push({ email, status: 'sent' });
+        log('OK', `Sent to ${email}`, { messageId: info.messageId });
+        results.push({ email, status: 'sent', messageId: info.messageId });
       } catch (err) {
-        console.log(`  ✗ Failed ${email}: ${err.message}`);
+        log('ERROR', `Failed to send to ${email}`, { error: err.message, code: err.code });
         results.push({ email, status: 'failed', error: err.message });
       }
     }
 
     const sent = results.filter(r => r.status === 'sent').length;
     const failed = results.filter(r => r.status === 'failed').length;
+    log('OK', `Batch complete: ${sent} sent, ${failed} failed`);
 
     const history = readResults();
     history.push({
@@ -243,7 +331,6 @@ app.post(['/send-emails', '/api/send-emails'], async (req, res) => {
       results,
     });
     writeResults(history);
-    console.log(`  ✅ Done: ${sent} sent, ${failed} failed`);
   })();
 });
 
@@ -252,20 +339,8 @@ app.get('/results', (req, res) => {
   res.json({ total: history.length, results: history });
 });
 
-app.get(['/', '/health'], (req, res) => {
-  res.json({
-    status: 'running',
-    port: process.env.PORT || 3457,
-    emailUser: process.env.EMAIL_USER,
-    recipientsFile: RECIPIENTS_FILE,
-    resultsFile: RESULTS_FILE,
-  });
-});
-
+// ─── Start ────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3457;
 app.listen(PORT, () => {
-  console.log(`\n✓ Email server running on http://localhost:${PORT}`);
-  console.log(`  Test it: curl http://localhost:${PORT}/health`);
-  console.log(`  Recipients: ${RECIPIENTS_FILE}`);
-  console.log(`  Results: ${RESULTS_FILE}\n`);
+  log('OK', `Server started on port ${PORT}`);
 });
