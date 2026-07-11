@@ -181,10 +181,6 @@ I hope this message finds you well.
 
 My name is Shivam Gupta, and I'm reaching out to express my strong interest in an internship opportunity with your organization.
 
-━━━━━━━━━━━━━━━━━━━━━━━━
-  2 YEARS OF PAID INTERNSHIP EXPERIENCE
-━━━━━━━━━━━━━━━━━━━━━━━━
-
 Over the past 2 years, I have worked as a paid intern across multiple product-based companies, gaining hands-on, real-world experience in:
 
 ✅ Backend System Optimization — Improved API response times and database performance
@@ -210,9 +206,9 @@ Over the past 2 years, I have worked as a paid intern across multiple product-ba
 🌐 Portfolio  →  https://port-folio-9ob2.onrender.com
 💻 GitHub     →  https://github.com/shivam543210
 🔗 LinkedIn   →  https://www.linkedin.com/in/shivam-gupta-bb1767304/
-📄 Resume     →  https://drive.google.com/file/d/1fQIY4hAmjvNPYYL0aMkMVBF2FngFNVH2/view?usp=sharing
+📄 Resume   https://drive.google.com/file/d/1fQIY4hAmjvNPYYL0aMkMVBF2FngFNVH2/view?usp=sharing
 
-━━━━━━━━━━━━━━━━━━━━━━━━
+
 
 I bring practical experience, not just theory — having already contributed to real products used by real users. I am a fast learner, proactive problem-solver, and highly motivated to make an impact from day one.
 
@@ -222,11 +218,13 @@ Looking forward to hearing from you!
 
 Warm regards,
 Shivam Gupta
+9305302337
 📧 shivam.dev.pro.2@gmail.com
 🔗 linkedin.com/in/shivam-gupta-bb1767304`;
 
         showToast('✅ Auto-filled! Review and send.');
     });
+
 
     document.getElementById('closeSendEmail').addEventListener('click', () => {
         document.getElementById('sendEmailModal').classList.add('hidden');
