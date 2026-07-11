@@ -134,7 +134,7 @@ function bindEvents() {
 
     document.getElementById('btnSettings').addEventListener('click', () => {
         document.getElementById('settingsWebhook').value = state.settings.webhook || '';
-        document.getElementById('settingsEmailUrl').value = state.settings.emailServerUrl || 'http://localhost:3456';
+        document.getElementById('settingsEmailUrl').value = state.settings.emailServerUrl || 'https://git-railway-account-production.up.railway.app';
         document.getElementById('settingsModal').classList.remove('hidden');
     });
 
@@ -184,7 +184,7 @@ function bindEvents() {
         const progress = document.getElementById('emailProgress');
         progress.textContent = 'Sending...';
 
-        const serverUrl = state.settings.emailServerUrl || 'http://localhost:3456';
+        const serverUrl = state.settings.emailServerUrl || 'https://git-railway-account-production.up.railway.app';
         try {
             const res = await fetch(`${serverUrl}/send-emails`, {
                 method: 'POST',
