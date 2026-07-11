@@ -173,35 +173,57 @@ function bindEvents() {
 
     // ⚡ Auto-Fill Internship Application
     document.getElementById('btnAutoFill').addEventListener('click', () => {
-        document.getElementById('emailSubject').value = 'Application for Internship | Backend & Server Management | 2 Years Experience';
+        document.getElementById('emailSubject').value = '🚀 Internship Application — 2 Years Paid Experience | Backend, Server & Cost Optimization';
 
-        document.getElementById('emailBody').value = `Hello,
+        document.getElementById('emailBody').value = `Hello Hiring Team,
 
-I am Shivam Gupta, and I am interested in an internship opportunity at your organization.
+I hope this message finds you well.
 
-I have 2 years of paid internship experience working with multiple product companies, where I have:
-• Managed and optimized backend systems for scale
-• Reduced deployment costs through infrastructure optimization
-• Handled server management and monitoring
-• Built and maintained management systems end-to-end
+My name is Shivam Gupta, and I'm reaching out to express my strong interest in an internship opportunity with your organization.
 
-Past Experience:
-• Medzillo (https://medzillo.in) — Backend & server management
-• SMC — System optimization & deployment
-• Curozip — Backend development
-• NF3 — Infrastructure & cost optimization
+━━━━━━━━━━━━━━━━━━━━━━━━
+  2 YEARS OF PAID INTERNSHIP EXPERIENCE
+━━━━━━━━━━━━━━━━━━━━━━━━
 
-Portfolio  : https://port-folio-9ob2.onrender.com
-GitHub     : https://github.com/shivam543210
-LinkedIn   : https://www.linkedin.com/in/shivam-gupta-bb1767304/
-Resume     : https://drive.google.com/file/d/1fQIY4hAmjvNPYYL0aMkMVBF2FngFNVH2/view?usp=sharing
+Over the past 2 years, I have worked as a paid intern across multiple product-based companies, gaining hands-on, real-world experience in:
 
-I would love to contribute and grow with your team. Please feel free to review my work and reach out.
+✅ Backend System Optimization — Improved API response times and database performance
+✅ Deployment Cost Cutting — Reduced cloud infrastructure costs significantly
+✅ Server Management — Managed Linux servers, CI/CD pipelines, and uptime monitoring
+✅ Management System Development — Built scalable admin & operations tools end-to-end
 
-Thank you for your time and consideration!
+━━━━━━━━━━━━━━━━━━━━━━━━
+  COMPANIES I'VE WORKED WITH (2 Years Paid)
+━━━━━━━━━━━━━━━━━━━━━━━━
 
-Best regards,
-Shivam Gupta`;
+🏢 Medzillo        → https://medzillo.in
+   Backend dev, server management & deployment optimization
+
+🏢 SMC             → System design & backend optimization
+🏢 Curozip         → Full-stack backend engineering
+🏢 NF3             → Infrastructure management & cost reduction
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+  MY WORK
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+🌐 Portfolio  →  https://port-folio-9ob2.onrender.com
+💻 GitHub     →  https://github.com/shivam543210
+🔗 LinkedIn   →  https://www.linkedin.com/in/shivam-gupta-bb1767304/
+📄 Resume     →  https://drive.google.com/file/d/1fQIY4hAmjvNPYYL0aMkMVBF2FngFNVH2/view?usp=sharing
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+I bring practical experience, not just theory — having already contributed to real products used by real users. I am a fast learner, proactive problem-solver, and highly motivated to make an impact from day one.
+
+I would love the opportunity to discuss how I can contribute to your team.
+
+Looking forward to hearing from you!
+
+Warm regards,
+Shivam Gupta
+📧 shivam.dev.pro.2@gmail.com
+🔗 linkedin.com/in/shivam-gupta-bb1767304`;
 
         showToast('✅ Auto-filled! Review and send.');
     });
