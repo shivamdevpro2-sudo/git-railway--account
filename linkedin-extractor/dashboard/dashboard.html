@@ -109,6 +109,27 @@
             <span class="close-modal" id="closeSendEmail">&times;</span>
             <h2>Send Email to All Contacts</h2>
             <p style="margin: 10px 0; color: #aaa;" id="emailCount"></p>
+
+            <!-- Auto-Fill Button -->
+            <div style="margin-bottom:12px;">
+                <button id="btnAutoFill" style="
+                    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+                    color: #fff;
+                    border: none;
+                    padding: 9px 18px;
+                    border-radius: 6px;
+                    font-size: 13px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    transition: opacity 0.2s;
+                " title="Auto-fill internship application">
+                    ⚡ Auto-Fill Internship Application
+                </button>
+            </div>
+
             <input type="text" id="emailSubject" placeholder="Subject" style="width:100%;padding:10px;border-radius:4px;border:1px solid #333;background:#252525;color:#fff;margin-bottom:10px;">
             <textarea id="emailBody" placeholder="Message body..." style="width:100%;height:200px;padding:10px;border-radius:4px;border:1px solid #333;background:#252525;color:#fff;resize:vertical;font-family:inherit;"></textarea>
             <div style="margin-top:10px;text-align:right;">

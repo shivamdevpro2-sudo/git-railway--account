@@ -171,6 +171,41 @@ function bindEvents() {
         document.getElementById('sendEmailModal').classList.remove('hidden');
     });
 
+    // ⚡ Auto-Fill Internship Application
+    document.getElementById('btnAutoFill').addEventListener('click', () => {
+        document.getElementById('emailSubject').value = 'Application for Internship | Backend & Server Management | 2 Years Experience';
+
+        document.getElementById('emailBody').value = `Hello,
+
+I am Shivam Gupta, and I am interested in an internship opportunity at your organization.
+
+I have 2 years of paid internship experience working with multiple product companies, where I have:
+• Managed and optimized backend systems for scale
+• Reduced deployment costs through infrastructure optimization
+• Handled server management and monitoring
+• Built and maintained management systems end-to-end
+
+Past Experience:
+• Medzillo (https://medzillo.in) — Backend & server management
+• SMC — System optimization & deployment
+• Curozip — Backend development
+• NF3 — Infrastructure & cost optimization
+
+Portfolio  : https://port-folio-9ob2.onrender.com
+GitHub     : https://github.com/shivam543210
+LinkedIn   : https://www.linkedin.com/in/shivam-gupta-bb1767304/
+Resume     : https://drive.google.com/file/d/1fQIY4hAmjvNPYYL0aMkMVBF2FngFNVH2/view?usp=sharing
+
+I would love to contribute and grow with your team. Please feel free to review my work and reach out.
+
+Thank you for your time and consideration!
+
+Best regards,
+Shivam Gupta`;
+
+        showToast('✅ Auto-filled! Review and send.');
+    });
+
     document.getElementById('closeSendEmail').addEventListener('click', () => {
         document.getElementById('sendEmailModal').classList.add('hidden');
     });
