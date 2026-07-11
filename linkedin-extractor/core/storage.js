@@ -1,7 +1,5 @@
 import { RootSchema } from './schema.js';
 
-const RAILWAY_URL = 'https://git-railway-account-production.up.railway.app';
-
 export const storage = {
     async loadAll() {
         const data = await chrome.storage.local.get(null);
@@ -9,12 +7,12 @@ export const storage = {
             await this.saveAll(RootSchema);
             return RootSchema;
         }
-        // Auto-migrate: replace old localhost URL with Railway URL
+        // Auto-migrate: replace Railway URL back to localhost URL
         const url = data.settings?.emailServerUrl || '';
-        if (!url || url.includes('localhost') || url.includes('127.0.0.1')) {
-            data.settings.emailServerUrl = RAILWAY_URL;
+        if (url.includes('railway')) {
+            data.settings.emailServerUrl = 'http://localhost:3457';
             await chrome.storage.local.set({ settings: data.settings });
-            console.log('[Storage] Migrated emailServerUrl → Railway');
+            console.log('[Storage] Migrated emailServerUrl → localhost');
         }
         return data;
     },

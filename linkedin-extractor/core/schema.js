@@ -26,7 +26,7 @@ export const RootSchema = {
     jobs: [],
     settings: {
         webhook: "",
-        emailServerUrl: "https://git-railway-account-production.up.railway.app",
+        emailServerUrl: "http://localhost:3457",
         retentionHours: 24
     },
     stats: {

@@ -284,14 +284,7 @@ Shivam Gupta
         if (!subject || !body) return showToast('Subject and body are required', 'error');
 
         const progress = document.getElementById('emailProgress');
-        const serverUrl = state.settings.emailServerUrl || 'https://git-railway-account-production.up.railway.app';
-
-        // Guard: catch localhost accidentally being used
-        if (serverUrl.includes('localhost') || serverUrl.includes('127.0.0.1')) {
-            progress.textContent = '❌ Error: Server URL is set to localhost — go to Settings and update it to Railway URL.';
-            showToast('Update Email Server URL in Settings!', 'error');
-            return;
-        }
+        const serverUrl = state.settings.emailServerUrl || 'http://localhost:3457';
 
         progress.textContent = `⏳ Sending via ${serverUrl} ...`;
 
@@ -312,7 +305,7 @@ Shivam Gupta
                 showToast(`Sent to ${data.sent} recipient(s)`);
             }
         } catch (e) {
-            progress.textContent = `❌ Error: ${e.message} — Check Railway logs or Settings URL`;
+            progress.textContent = `❌ Error: ${e.message} — Is local server running?`;
             showToast(`Send failed: ${e.message}`, 'error');
         }
     });
