@@ -284,9 +284,17 @@ Shivam Gupta
         if (!subject || !body) return showToast('Subject and body are required', 'error');
 
         const progress = document.getElementById('emailProgress');
-        progress.textContent = 'Sending...';
-
         const serverUrl = state.settings.emailServerUrl || 'https://git-railway-account-production.up.railway.app';
+
+        // Guard: catch localhost accidentally being used
+        if (serverUrl.includes('localhost') || serverUrl.includes('127.0.0.1')) {
+            progress.textContent = '❌ Error: Server URL is set to localhost — go to Settings and update it to Railway URL.';
+            showToast('Update Email Server URL in Settings!', 'error');
+            return;
+        }
+
+        progress.textContent = `⏳ Sending via ${serverUrl} ...`;
+
         try {
             const res = await fetch(`${serverUrl}/send-emails`, {
                 method: 'POST',
@@ -294,14 +302,15 @@ Shivam Gupta
                 body: JSON.stringify({ emails: allEmails, subject, body }),
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Failed');
-            progress.textContent = `Done: ${data.sent} sent, ${data.failed} failed`;
+            if (!res.ok) throw new Error(data.error || 'Server error');
+            progress.textContent = `✅ Done: ${data.sent} sent, ${data.failed} failed`;
             showToast(`Sent to ${data.sent} recipient(s)`);
         } catch (e) {
-            progress.textContent = `Error: ${e.message}`;
-            showToast(e.message, 'error');
+            progress.textContent = `❌ Error: ${e.message} — Check Railway logs or Settings URL`;
+            showToast(`Send failed: ${e.message}`, 'error');
         }
     });
+
 
     document.getElementById('btnPrev').addEventListener('click', () => {
         if (state.page > 1) { state.page--; render(); }
