@@ -6,6 +6,7 @@ dotenv.config({ path: resolve(dirname(fileURLToPath(import.meta.url)), '..', '.e
 import express from 'express';
 import cors from 'cors';
 import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join } from 'path';
 
@@ -81,34 +82,53 @@ app.use(cors({
 app.options('*', cors());
 app.use(express.json());
 
-// ─── Env Check ────────────────────────────────────────────────────────────
-if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-  log('ERROR', 'Missing EMAIL_USER or EMAIL_PASS env vars — server will crash');
-  process.exit(1);
+// ─── Email Sender Setup (Dual Mode) ─────────────────────────────────────────
+// Railway blocks SMTP → use Resend API. Local → use Gmail SMTP.
+const USE_RESEND = !!process.env.RESEND_API_KEY;
+
+let resendClient = null;
+let transporter = null;
+
+if (USE_RESEND) {
+  resendClient = new Resend(process.env.RESEND_API_KEY);
+  log('OK', '📨 Using Resend API (Railway mode)');
+} else {
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    log('ERROR', 'Missing EMAIL_USER or EMAIL_PASS — set in .env or Railway Variables');
+    process.exit(1);
+  }
+  transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+  transporter.verify((err, success) => {
+    if (err) log('ERROR', 'Gmail SMTP verification FAILED', { error: err.message, code: err.code });
+    else log('OK', 'Gmail SMTP verified — transporter ready');
+  });
+  log('OK', '📧 Using Gmail SMTP (local mode)');
 }
 
-log('INFO', 'Starting email server', {
-  EMAIL_USER: process.env.EMAIL_USER,
-  EMAIL_PASS: process.env.EMAIL_PASS ? `${process.env.EMAIL_PASS.substring(0, 4)}****` : 'NOT SET',
-});
+// ─── Unified Send Function ────────────────────────────────────────────────────
+async function sendEmail({ to, subject, text, from }) {
+  const fromAddr = from || process.env.EMAIL_USER || 'onboarding@resend.dev';
 
-// ─── Nodemailer Transporter ───────────────────────────────────────────────
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
-
-// Verify on startup
-transporter.verify((err, success) => {
-  if (err) {
-    log('ERROR', 'Gmail SMTP verification FAILED', { error: err.message, code: err.code });
+  if (USE_RESEND) {
+    const { data, error } = await resendClient.emails.send({
+      from: `Shivam Gupta <${fromAddr}>`,
+      to: [to],
+      subject,
+      text,
+    });
+    if (error) throw Object.assign(new Error(error.message), { code: error.name });
+    return { messageId: data.id, response: 'Resend OK' };
   } else {
-    log('OK', 'Gmail SMTP verified — transporter is ready', { success });
+    const info = await transporter.sendMail({ from: fromAddr, to, subject, text });
+    return { messageId: info.messageId, response: info.response };
   }
-});
+}
 
 // ─── Routes ───────────────────────────────────────────────────────────────
 
@@ -139,49 +159,25 @@ app.post('/test-email', async (req, res) => {
   const { to } = req.body;
   if (!to) return res.status(400).json({ error: 'Provide { to: "email@example.com" }' });
 
-  log('INFO', `[TEST] Verifying SMTP before sending to ${to}`);
-
-  // Step 1: verify
+  log('INFO', `[TEST] Sending test email to ${to} via ${USE_RESEND ? 'Resend' : 'Gmail SMTP'}`);
   try {
-    await new Promise((resolve, reject) =>
-      transporter.verify((err, ok) => err ? reject(err) : resolve(ok))
-    );
-    log('OK', '[TEST] SMTP verify passed');
-  } catch (err) {
-    log('ERROR', '[TEST] SMTP verify FAILED', { error: err.message, code: err.code });
-    return res.status(500).json({
-      step: 'smtp_verify',
-      success: false,
-      error: err.message,
-      code: err.code,
-      hint: 'Check EMAIL_USER and EMAIL_PASS in Railway Variables tab',
-    });
-  }
-
-  // Step 2: send
-  log('INFO', `[TEST] Attempting to send test email to ${to}`);
-  try {
-    const info = await transporter.sendMail({
-      from: process.env.EMAIL_USER,
+    const info = await sendEmail({
       to,
       subject: '✅ Test Email from Railway Server',
-      text: `Hello!\n\nYeh test email Railway server se successfully bheja gaya.\n\n- Shivam Gupta\n9305302337`,
+      text: `Hello!\n\nYeh test email Railway server se successfully bheja gaya.\nMode: ${USE_RESEND ? 'Resend API' : 'Gmail SMTP'}\n\n- Shivam Gupta\n9305302337`,
     });
-    log('OK', `[TEST] Email sent successfully to ${to}`, { messageId: info.messageId, response: info.response });
-    return res.json({
-      success: true,
-      to,
-      messageId: info.messageId,
-      response: info.response,
-    });
+    log('OK', `[TEST] Email sent successfully to ${to}`, info);
+    return res.json({ success: true, to, mode: USE_RESEND ? 'resend' : 'smtp', ...info });
   } catch (err) {
     log('ERROR', `[TEST] Email send FAILED to ${to}`, { error: err.message, code: err.code });
     return res.status(500).json({
-      step: 'send_mail',
       success: false,
       error: err.message,
       code: err.code,
-      hint: 'Gmail may have blocked the send. Check App Password or enable Less Secure Apps.',
+      mode: USE_RESEND ? 'resend' : 'smtp',
+      hint: USE_RESEND
+        ? 'Check RESEND_API_KEY in Railway Variables'
+        : 'Check EMAIL_USER / EMAIL_PASS. Railway blocks SMTP — add RESEND_API_KEY instead.',
     });
   }
 });
@@ -302,12 +298,7 @@ app.post(['/send-emails', '/api/send-emails'], async (req, res) => {
     for (const email of targetEmails) {
       try {
         log('INFO', `Sending to: ${email}`);
-        const info = await transporter.sendMail({
-          from: process.env.EMAIL_USER,
-          to: email,
-          subject: finalSubject,
-          text: body,
-        });
+        const info = await sendEmail({ to: email, subject: finalSubject, text: body });
         log('OK', `Sent to ${email}`, { messageId: info.messageId });
         results.push({ email, status: 'sent', messageId: info.messageId });
       } catch (err) {
