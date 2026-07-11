@@ -76,10 +76,18 @@ const transporter = nodemailer.createTransport({
   service: 'gmail',
   pool: true,
   maxConnections: 1,
+  rateDelta: 2000,
+  rateLimit: 5,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
+});
+
+// Verify credentials on startup
+transporter.verify((err) => {
+  if (err) console.error('❌ Gmail auth failed:', err.message);
+  else console.log('✅ Gmail transporter ready');
 });
 
 app.get('/recipients', (req, res) => {
@@ -187,47 +195,56 @@ app.post(['/send-emails', '/api/send-emails'], async (req, res) => {
 
   const labelPrefix = buildSubjectLabel(matchedCategories);
   const finalSubject = labelPrefix + subject;
+  const total = targetEmails.length;
 
-  console.log(`\n[${new Date().toISOString()}] Sending batch`);
+  console.log(`\n[${new Date().toISOString()}] Queuing ${total} emails`);
   console.log(`  Subject: ${finalSubject}`);
-  console.log(`  Recipients: ${targetEmails.length}`);
-  console.log(`  Body preview: ${(body || '').substring(0, 100)}...`);
 
-  const results = [];
-  for (const email of targetEmails) {
-    try {
-      console.log(`  Sending to: ${email}...`);
-      await transporter.sendMail({
-        from: process.env.EMAIL_USER,
-        to: email,
-        subject: finalSubject,
-        text: body,
-      });
-      console.log(`  ✓ Sent to ${email}`);
-      results.push({ email, status: 'sent' });
-    } catch (err) {
-      console.log(`  ✗ Failed ${email}: ${err.message}`);
-      results.push({ email, status: 'failed', error: err.message });
-    }
-  }
-
-  const sent = results.filter(r => r.status === 'sent').length;
-  const failed = results.filter(r => r.status === 'failed').length;
-
-  const history = readResults();
-  history.push({
-    timestamp: new Date().toISOString(),
-    categories: matchedCategories || null,
-    emails: targetEmails,
-    subject: finalSubject,
-    sent,
-    failed,
-    results,
+  // ✅ Immediately respond so extension doesn't timeout
+  res.status(202).json({
+    status: 'queued',
+    sent: total,
+    failed: 0,
+    message: `${total} email(s) queued for delivery`,
+    results: targetEmails.map(e => ({ email: e, status: 'queued' })),
   });
-  writeResults(history);
 
-  console.log(`  Done: ${sent} sent, ${failed} failed`);
-  res.json({ sent, failed, results });
+  // Send emails in background after response
+  (async () => {
+    const results = [];
+    for (const email of targetEmails) {
+      try {
+        console.log(`  Sending to: ${email}...`);
+        await transporter.sendMail({
+          from: process.env.EMAIL_USER,
+          to: email,
+          subject: finalSubject,
+          text: body,
+        });
+        console.log(`  ✓ Sent to ${email}`);
+        results.push({ email, status: 'sent' });
+      } catch (err) {
+        console.log(`  ✗ Failed ${email}: ${err.message}`);
+        results.push({ email, status: 'failed', error: err.message });
+      }
+    }
+
+    const sent = results.filter(r => r.status === 'sent').length;
+    const failed = results.filter(r => r.status === 'failed').length;
+
+    const history = readResults();
+    history.push({
+      timestamp: new Date().toISOString(),
+      categories: matchedCategories || null,
+      emails: targetEmails,
+      subject: finalSubject,
+      sent,
+      failed,
+      results,
+    });
+    writeResults(history);
+    console.log(`  ✅ Done: ${sent} sent, ${failed} failed`);
+  })();
 });
 
 app.get('/results', (req, res) => {

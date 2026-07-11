@@ -302,9 +302,15 @@ Shivam Gupta
                 body: JSON.stringify({ emails: allEmails, subject, body }),
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Server error');
-            progress.textContent = `✅ Done: ${data.sent} sent, ${data.failed} failed`;
-            showToast(`Sent to ${data.sent} recipient(s)`);
+            if (!res.ok && res.status !== 202) throw new Error(data.error || 'Server error');
+
+            if (data.status === 'queued') {
+                progress.textContent = `✅ ${data.sent} email(s) queued for delivery! Check inbox in ~30 seconds.`;
+                showToast(`${data.sent} email(s) queued for delivery!`);
+            } else {
+                progress.textContent = `✅ Done: ${data.sent} sent, ${data.failed} failed`;
+                showToast(`Sent to ${data.sent} recipient(s)`);
+            }
         } catch (e) {
             progress.textContent = `❌ Error: ${e.message} — Check Railway logs or Settings URL`;
             showToast(`Send failed: ${e.message}`, 'error');
